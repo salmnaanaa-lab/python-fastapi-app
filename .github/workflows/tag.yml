@@ -1,0 +1,13 @@
+name: Tags
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  afficher-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Afficher le tag
+        run: echo "Tag publie ${{ github.ref_name }}"
