@@ -1,7 +1,8 @@
 name: CI
 
 on: [push]
-
+env:
+  APP_NAME: fastapi-starter
 jobs:
 
   lint:
@@ -64,6 +65,24 @@ jobs:
       - name: Installer les dependances
         run: |
           python -m pip install -r requirements.txt -r requirements-dev.txt
-
+            - name: Afficher les contextes
+        env:
+          APP: ${{ env.APP_NAME }}
+          ACTEUR: ${{ github.actor }}
+          EVENEMENT: ${{ github.event_name }}
+          BRANCHE: ${{ github.ref_name }}
+          SHA_COMMIT: ${{ github.sha }}
+          SYSTEME: ${{ runner.os }}
+          SOURCE_PR: ${{ github.head_ref }}
+          CIBLE_PR: ${{ github.base_ref }}
+        run: |
+          echo "Application = $APP"
+          echo "Acteur = $ACTEUR"
+          echo "Evenement = $EVENEMENT"
+          echo "Branche = $BRANCHE"
+          echo "SHA = $SHA_COMMIT"
+          echo "Runner OS = $SYSTEME"
+          echo "Branche source PR = $SOURCE_PR"
+          echo "Branche cible PR = $CIBLE_PR"
       - name: Executer les tests
         run: python -m pytest
