@@ -1,0 +1,98 @@
+name: Env, Inputs and Outputs Lab
+
+on:
+  push:
+    branches:
+      - feature/tp-env
+    paths:
+      - ".github/workflows/tp-env.yml"
+      - ".github/workflows/greeting.yml"
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environnement cible"
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+        default: staging
+
+      version:
+        description: "Version à déployer"
+        required: true
+        type: string
+        default: "1.0.0"
+
+      debug:
+        description: "Activer les informations de debug"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  TARGET_ENVIRONMENT: ${{ inputs.environment || 'staging' }}
+  APP_VERSION: ${{ inputs.version || '1.0.0' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    outputs:
+      full_version: ${{ steps.version.outputs.full_version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          echo "APP_NAME=my-app" >> "$GITHUB_ENV"
+          echo "BUILD_DATE=$(date +%F)" >> "$GITHUB_ENV"
+
+      - name: Print environment variables
+        run: |
+          echo "Application $APP_NAME built on $BUILD_DATE"
+
+      - name: Print deployment inputs
+        run: |
+          echo "Environment: $TARGET_ENVIRONMENT"
+          echo "Version: $APP_VERSION"
+
+      - name: Print debug information
+        if: ${{ inputs.debug }}
+        run: |
+          echo "Debug mode enabled"
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Branch: $GITHUB_REF_NAME"
+
+      - name: Compute full version
+        id: version
+        run: |
+          echo "full_version=${APP_VERSION}-$(date +%F)" >> "$GITHUB_OUTPUT"
+
+  verify-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print APP_NAME
+        run: |
+          echo "APP_NAME=[$APP_NAME]"
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show deployment target
+        env:
+          FULL_VERSION: ${{ needs.build.outputs.full_version }}
+        run: |
+          echo "Deploying $FULL_VERSION to $TARGET_ENVIRONMENT"
+
+  call-greeting:
+    uses: ./.github/workflows/greeting.yml
+    with:
+      recipient: ${{ inputs.environment || 'staging' }}
